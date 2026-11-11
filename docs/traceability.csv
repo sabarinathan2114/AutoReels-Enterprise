@@ -1,0 +1,11 @@
+Requirement_ID,Description,Phase,Test_File,Status,Verification_Date
+FOUND-001,Monorepo Directory Layout,Phase 1,Directory Check,PASSED,2026-11-11
+FOUND-002,MySQL 8.0/MariaDB Dynamic Engine Pooling,Phase 1,backend/tests/test_settings.py::test_database_url_configuration,PASSED,2026-11-11
+FOUND-003,Alembic Database Migration Baseline,Phase 1,alembic upgrade head,PASSED,2026-11-11
+FOUND-004,Pydantic V2 Configuration Management,Phase 1,backend/tests/test_settings.py::test_default_settings,PASSED,2026-11-11
+FOUND-005,Request ID Middleware (X-Request-ID),Phase 1,backend/tests/test_health.py::test_request_id_middleware,PASSED,2026-11-11
+FOUND-006,Liveness Probe (/health/live),Phase 1,backend/tests/test_health.py::test_health_liveness,PASSED,2026-11-11
+FOUND-007,Readiness Probe (/health/ready),Phase 1,backend/tests/test_health.py::test_health_readiness,PASSED,2026-11-11
+FOUND-008,Free-First 4-Tier Plan Matrix,Phase 1,backend/tests/test_health.py::test_plans_matrix,PASSED,2026-11-11
+FOUND-009,Docker Compose Multi-Service Definition,Phase 1,infra/docker-compose.yml syntax check,PASSED,2026-11-11
+FOUND-010,Next.js 16 Production TypeScript Build,Phase 1,npm run build,PASSED,2026-11-11

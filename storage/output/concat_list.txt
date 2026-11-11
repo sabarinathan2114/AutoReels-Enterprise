@@ -1,0 +1,3 @@
+file 'D:/Work_Space/products/Ai Content Vedio/storage/images/test_scene_1.jpg'
+duration 4.46
+file 'D:/Work_Space/products/Ai Content Vedio/storage/images/test_scene_1.jpg'
