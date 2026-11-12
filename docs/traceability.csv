@@ -27,3 +27,8 @@ PAGE-007,3-Step Interactive Onboarding Modal,Phase 3,frontend/src/components/onb
 PAGE-008,Import-Only Route Architecture in src/app,Phase 3,Next.js 16 build (7/7 routes static),PASSED,2026-11-12
 PAGE-009,Strict 320px Mobile Responsiveness,Phase 3,Tailwind Breakpoints Check,PASSED,2026-11-12
 PAGE-010,Zero Hardcoded UI Data (src/components/hardcodedata),Phase 3,Hardcodedata index exports,PASSED,2026-11-12
+ENTITLE-001,Effective Entitlements Calculation (GET /api/v1/me/entitlements),Phase 4,backend/tests/test_entitlements.py::test_get_effective_entitlements,PASSED,2026-11-12
+ENTITLE-002,Feature Locked Gate 403 on Social Publish (Free Tier),Phase 4,backend/tests/test_entitlements.py::test_free_user_calling_publish_gets_403_feature_locked,PASSED,2026-11-12
+ENTITLE-003,Atomic Quota Consumption Concurrency Race Test (20 Parallel),Phase 4,backend/tests/test_entitlements.py::test_atomic_quota_concurrency_race_condition,PASSED,2026-11-12
+ENTITLE-004,Plan Upgrade Request Submission,Phase 4,backend/tests/test_entitlements.py::test_upgrade_request_submission,PASSED,2026-11-12
+ENTITLE-005,Dashboard Real-Time Usage Meter UI & Modal,Phase 4,frontend/src/components/dashboard/UsageMeter.tsx,PASSED,2026-11-12

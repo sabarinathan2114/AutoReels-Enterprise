@@ -17,12 +17,14 @@ from app.config.settings import settings
 from app.database import engine, Base, SessionLocal, get_db, check_db_connection
 from app.models.entities import User, Channel, SocialAccount, VideoProject, Plan
 from app.api.auth import router as auth_router, get_current_user
+from app.api.entitlements import router as entitlements_router
 from app.services.voice_service import VoiceService
 from app.services.media_service import MediaService
 from app.services.script_service import ScriptService
 from app.services.render_service import RenderService
 from app.services.social_service import SocialDispatcher
 from app.services.plan_service import PlanService
+from app.services.entitlement_service import EntitlementService
 
 # Configure structured logging
 logging.basicConfig(
@@ -97,8 +99,9 @@ async def observability_middleware(request: Request, call_next):
 # Mount local storage directory for static assets
 app.mount("/storage", StaticFiles(directory=STORAGE_DIR), name="storage")
 
-# Register Auth router
+# Register Auth and Entitlements routers
 app.include_router(auth_router)
+app.include_router(entitlements_router)
 
 dispatcher = SocialDispatcher()
 
@@ -124,6 +127,7 @@ class RenderRequest(BaseModel):
     srt_path: Optional[str] = None
     output_filename: str = "final_reel.mp4"
     watermark: bool = False
+    workspace_id: Optional[str] = None
 
 class PublishRequest(BaseModel):
     account_ids: List[str]
@@ -131,6 +135,7 @@ class PublishRequest(BaseModel):
     title: str
     description: str
     tags: List[str]
+    workspace_id: Optional[str] = None
 
 # Health Probes (Spec Section 10 & 14)
 @app.get("/health/live")
@@ -254,7 +259,11 @@ async def generate_scene_image(req: SceneImageRequest):
     }
 
 @app.post("/api/render/video")
-def render_video(req: RenderRequest):
+def render_video(req: RenderRequest, db: SessionLocal = Depends(get_db)):
+    # Enforce atomic quota check if workspace context provided
+    if req.workspace_id:
+        EntitlementService.consume_video_quota(db, req.workspace_id)
+
     try:
         audio_full_path = req.audio_path
         if not os.path.isabs(audio_full_path):
@@ -283,6 +292,8 @@ def render_video(req: RenderRequest):
             "video_path": rendered_path,
             "url": f"http://localhost:8000/storage/output/{req.output_filename}"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -291,7 +302,21 @@ def list_accounts():
     return dispatcher.get_connected_accounts()
 
 @app.post("/api/social/publish")
-def publish_to_accounts(req: PublishRequest):
+def publish_to_accounts(req: PublishRequest, db: SessionLocal = Depends(get_db)):
+    # Entitlement Gate: Direct publishing requires Creator or Pro tier (Plan A/B/C)
+    if req.workspace_id:
+        entitlements = EntitlementService.get_effective_entitlements(db, req.workspace_id)
+        if entitlements["plan_id"] == "free" or "single_channel_auto_dispatch" not in entitlements.get("features", []):
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "FEATURE_LOCKED",
+                    "feature": "social_publishing",
+                    "plan": entitlements["plan_id"],
+                    "message": "Direct social broadcasting is disabled on the Free Plan. Please submit an upgrade request for Plan A, B, or C."
+                }
+            )
+
     results = dispatcher.broadcast_to_selected_accounts(
         account_ids=req.account_ids,
         video_path=req.video_path,

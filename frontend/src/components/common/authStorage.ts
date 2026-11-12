@@ -3,6 +3,8 @@ export interface AuthUserData {
   email: string;
   full_name?: string;
   is_active: boolean;
+  workspace_id?: string;
+  plan_id?: string;
 }
 
 const TOKEN_KEY = "az_jwt_token";
