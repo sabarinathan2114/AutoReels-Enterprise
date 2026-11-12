@@ -42,10 +42,11 @@ class AuthService:
         return encoded_jwt
 
     @staticmethod
-    def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
+    def decode_access_token(token: str, audience: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Decodes and validates a JWT token."""
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            options = {"verify_aud": False} if audience is None else {}
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], audience=audience, options=options)
             return payload
         except jwt.PyJWTError:
             return None

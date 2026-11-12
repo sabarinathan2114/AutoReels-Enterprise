@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Film, Sparkles, LayoutDashboard, Compass, CreditCard, LogOut, LogIn, UserCheck } from "lucide-react";
+import Link from "next/link";
+import { Film, Sparkles, LayoutDashboard, Compass, CreditCard, LogOut, LogIn, UserCheck, ShieldAlert } from "lucide-react";
 import { CHANNELS_DATA, ChannelProfile } from "../hardcodedata";
 import { CosmicSelect } from "../common/FormControls";
 import { AuthStorage, AuthUserData } from "../common/authStorage";
@@ -128,6 +129,13 @@ export function Header({
             <CreditCard className="w-3.5 h-3.5 flex-shrink-0 text-emerald-400" />
             <span>Plans</span>
           </button>
+          <Link
+            href="/admin"
+            className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap text-purple-300 hover:text-white hover:bg-purple-900/30"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0 text-fuchsia-400" />
+            <span>Admin</span>
+          </Link>
         </nav>
 
         {/* Right Section: Channel Switcher & Desktop Auth */}

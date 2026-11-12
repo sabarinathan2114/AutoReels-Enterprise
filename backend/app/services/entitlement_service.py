@@ -15,6 +15,17 @@ _ENTITLEMENT_CACHE: Dict[str, tuple[float, Dict[str, Any]]] = {}
 CACHE_TTL_SECONDS = 60
 
 class EntitlementService:
+    _cache = _ENTITLEMENT_CACHE
+
+    @staticmethod
+    def invalidate_cache(workspace_id: Optional[str] = None):
+        """Invalidates workspace cache or entire cache upon plan or quota update."""
+        if workspace_id:
+            if workspace_id in _ENTITLEMENT_CACHE:
+                del _ENTITLEMENT_CACHE[workspace_id]
+        else:
+            _ENTITLEMENT_CACHE.clear()
+
     @staticmethod
     def get_effective_entitlements(db: Session, workspace_id: str, use_cache: bool = True) -> Dict[str, Any]:
         """

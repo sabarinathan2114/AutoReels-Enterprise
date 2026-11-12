@@ -16,6 +16,23 @@ export function CosmicLabel({ children, hint, className = "" }: FormLabelProps) 
   );
 }
 
+interface CosmicInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  hint?: React.ReactNode;
+}
+
+export function CosmicInput({ label, hint, className = "", ...props }: CosmicInputProps) {
+  return (
+    <div className="w-full">
+      {label && <CosmicLabel hint={hint}>{label}</CosmicLabel>}
+      <input
+        className={`w-full glass-panel text-xs p-2.5 rounded-xl border border-purple-500/30 text-white focus:outline-none focus:border-purple-400 placeholder:text-purple-400/40 ${className}`}
+        {...props}
+      />
+    </div>
+  );
+}
+
 interface CosmicSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   hint?: React.ReactNode;

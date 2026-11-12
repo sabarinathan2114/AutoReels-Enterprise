@@ -18,6 +18,7 @@ from app.database import engine, Base, SessionLocal, get_db, check_db_connection
 from app.models.entities import User, Channel, SocialAccount, VideoProject, Plan
 from app.api.auth import router as auth_router, get_current_user
 from app.api.entitlements import router as entitlements_router
+from app.api.admin import router as admin_router
 from app.services.voice_service import VoiceService
 from app.services.media_service import MediaService
 from app.services.script_service import ScriptService
@@ -99,9 +100,10 @@ async def observability_middleware(request: Request, call_next):
 # Mount local storage directory for static assets
 app.mount("/storage", StaticFiles(directory=STORAGE_DIR), name="storage")
 
-# Register Auth and Entitlements routers
+# Register Auth, Entitlements, and Admin routers
 app.include_router(auth_router)
 app.include_router(entitlements_router)
+app.include_router(admin_router)
 
 dispatcher = SocialDispatcher()
 

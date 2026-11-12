@@ -32,3 +32,11 @@ ENTITLE-002,Feature Locked Gate 403 on Social Publish (Free Tier),Phase 4,backen
 ENTITLE-003,Atomic Quota Consumption Concurrency Race Test (20 Parallel),Phase 4,backend/tests/test_entitlements.py::test_atomic_quota_concurrency_race_condition,PASSED,2026-11-12
 ENTITLE-004,Plan Upgrade Request Submission,Phase 4,backend/tests/test_entitlements.py::test_upgrade_request_submission,PASSED,2026-11-12
 ENTITLE-005,Dashboard Real-Time Usage Meter UI & Modal,Phase 4,frontend/src/components/dashboard/UsageMeter.tsx,PASSED,2026-11-12
+ADM-001,Admin Login & Isolated Audience Token (autoreels-admin),Phase 5,backend/tests/test_admin.py::test_admin_login_and_token_audience,PASSED,2026-11-12
+ADM-002,Non-Admin Access Denial HTTP 403 Gate (ADM-T1),Phase 5,backend/tests/test_admin.py::test_adm_t1_non_admin_cannot_reach_admin_api,PASSED,2026-11-12
+ADM-003,Role Split SUPPORT Read-Only & 403 on Mutations (ADM-T4),Phase 5,backend/tests/test_admin.py::test_adm_t4_support_role_cannot_edit_plans_or_approve,PASSED,2026-11-12
+ADM-004,Upgrade Approval Workflow & Quota Expansion to Plan A,Phase 5,backend/tests/test_admin.py::test_upgrade_approval_workflow_and_quota_expansion,PASSED,2026-11-12
+ADM-005,Plan Limit Edit Immediate Cache Invalidation <60s (PLAN-04),Phase 5,backend/tests/test_admin.py::test_plan_04_plan_edit_takes_effect_immediately,PASSED,2026-11-12
+ADM-006,Transactional Audit Commit & Fault Injection Rollback (ADM-T2),Phase 5,backend/tests/test_admin.py::test_adm_t2_forced_audit_failure_rolls_back_action,PASSED,2026-11-12
+ADM-007,Global Daily Render Cap & Audit Log Ledger,Phase 5,backend/tests/test_admin.py::test_admin_settings_daily_cap_and_audit_log,PASSED,2026-11-12
+ADM-008,Super Admin Console UI with 5 Modular Tabs,Phase 5,frontend/src/app/admin/page.tsx Next.js build,PASSED,2026-11-12
