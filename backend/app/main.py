@@ -4,6 +4,7 @@ import uuid
 import logging
 import json
 from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Request, Response
@@ -13,14 +14,15 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.config.settings import settings
-from app.database import engine, Base, check_db_connection
-from app.models.entities import User, Channel, SocialAccount, VideoProject
+from app.database import engine, Base, SessionLocal, get_db, check_db_connection
+from app.models.entities import User, Channel, SocialAccount, VideoProject, Plan
 from app.api.auth import router as auth_router, get_current_user
 from app.services.voice_service import VoiceService
 from app.services.media_service import MediaService
 from app.services.script_service import ScriptService
 from app.services.render_service import RenderService
 from app.services.social_service import SocialDispatcher
+from app.services.plan_service import PlanService
 
 # Configure structured logging
 logging.basicConfig(
@@ -37,12 +39,24 @@ STORAGE_DIR = settings.STORAGE_LOCAL_DIR
 for sub in ["audio", "images", "video", "output"]:
     os.makedirs(os.path.join(STORAGE_DIR, sub), exist_ok=True)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure tables and seed default plan tiers
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        PlanService.seed_plans(db)
+    finally:
+        db.close()
+    yield
+
 app = FastAPI(
     title=settings.APP_NAME,
     description="Enterprise Short-Form Video Automation Engine (Master Build Specification v2.0 / Free-First)",
     version=settings.APP_VERSION,
     docs_url="/docs" if settings.DEBUG else None,
-    redoc_url="/redoc" if settings.DEBUG else None
+    redoc_url="/redoc" if settings.DEBUG else None,
+    lifespan=lifespan
 )
 
 # CORS
@@ -181,57 +195,26 @@ def root_info():
     }
 
 @app.get("/api/plans")
-def get_plans():
-    """AutoReels v2.0 Section 15.4 Plan Matrix"""
+def get_plans(db: SessionLocal = Depends(get_db)):
+    """AutoReels v2.0 Section 15.4 Live Database Plan Matrix (Plans as Data)"""
+    plans = PlanService.get_all_active_plans(db)
+    if not plans:
+        plans = PlanService.seed_plans(db)
     return [
         {
-            "id": "free",
-            "name": "Free Tier",
-            "max_duration_sec": 30,
-            "resolution": "720x1280",
-            "watermark": True,
-            "voices": 2,
-            "social_channels": 0,
-            "modes": ["Zero-Input (Preset Niches)"],
-            "storage_retention_days": 3,
-            "price_monthly": "$0.00"
-        },
-        {
-            "id": "plan_a",
-            "name": "Plan A (Creator)",
-            "max_duration_sec": 45,
-            "resolution": "1080x1920",
-            "watermark": False,
-            "voices": 6,
-            "social_channels": 1,
-            "modes": ["Zero-Input", "Director Mode"],
-            "storage_retention_days": 14,
-            "price_monthly": "$9.00 / Free Promo"
-        },
-        {
-            "id": "plan_b",
-            "name": "Plan B (Growth)",
-            "max_duration_sec": 60,
-            "resolution": "1080x1920",
-            "watermark": False,
-            "voices": 12,
-            "social_channels": 3,
-            "modes": ["Zero-Input", "Director Mode", "Character Mode"],
-            "storage_retention_days": 30,
-            "price_monthly": "$29.00"
-        },
-        {
-            "id": "plan_c",
-            "name": "Plan C (Agency / Enterprise)",
-            "max_duration_sec": 60,
-            "resolution": "1080x1920",
-            "watermark": False,
-            "voices": "All + Brand Voice",
-            "social_channels": 10,
-            "modes": ["All Modes + Performance Autopilot"],
-            "storage_retention_days": 60,
-            "price_monthly": "$79.00"
+            "id": p.id,
+            "name": p.name,
+            "max_duration_sec": p.max_duration_seconds,
+            "resolution": p.resolution,
+            "watermark": p.watermark,
+            "voices": p.allowed_voices_count,
+            "social_channels": p.allowed_channels_count,
+            "modes": p.features or [],
+            "storage_retention_days": p.storage_retention_days,
+            "price_monthly": f"${p.monthly_price_cents / 100:.2f}" if p.monthly_price_cents > 0 else "$0.00",
+            "monthly_quota": p.monthly_video_quota
         }
+        for p in plans
     ]
 
 @app.get("/api/voices")

@@ -11,8 +11,9 @@ except (ImportError, Exception):
     EmailStr = Annotated[str, StringConstraints(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
 
 from app.database import get_db
-from app.models.entities import User, Channel, SocialAccount
+from app.models.entities import User, Channel, SocialAccount, Membership, Workspace, Subscription
 from app.services.auth_service import AuthService
+from app.services.tenant_service import TenantService
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -30,9 +31,12 @@ class LoginRequest(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
+    uuid: Optional[str] = None
     email: str
     full_name: Optional[str]
     is_active: bool
+    workspace_id: Optional[str] = None
+    plan_id: Optional[str] = "free"
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -74,9 +78,19 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     
     user = AuthService.create_user(db, req.email, req.password, req.full_name)
     
-    # Seed default starter channels for this new user
+    # Provision tenant hierarchy with Free plan in one atomic transaction
+    tenant_info = TenantService.create_tenant_hierarchy(
+        db=db,
+        user_id=user.id,
+        tenant_name=req.full_name or "My Studio",
+        plan_id="free"
+    )
+    workspace_id = tenant_info["workspace_id"]
+
+    # Seed default starter channels for this new user scoped to workspace
     default_ch = Channel(
         id=f"ch_{user.id}_kids",
+        workspace_id=workspace_id,
         user_id=user.id,
         name="Chutti Kuzhandhai (Tamil / Kids)",
         niche="emotional_drama",
@@ -87,11 +101,19 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.add(default_ch)
     db.commit()
 
-    token = AuthService.create_access_token(data={"sub": user.email, "user_id": user.id})
+    token = AuthService.create_access_token(data={"sub": user.email, "user_id": user.id, "workspace_id": workspace_id})
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": user
+        "user": {
+            "id": user.id,
+            "uuid": user.uuid,
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_active": user.is_active,
+            "workspace_id": workspace_id,
+            "plan_id": "free"
+        }
     }
 
 @router.post("/login", response_model=AuthResponse)
@@ -103,11 +125,29 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
             detail="Incorrect email or password"
         )
     
-    token = AuthService.create_access_token(data={"sub": user.email, "user_id": user.id})
+    # Retrieve user's primary workspace and plan
+    membership = db.query(Membership).filter(Membership.user_id == user.id).first()
+    workspace_id = membership.workspace_id if membership else None
+    
+    plan_id = "free"
+    if membership and membership.workspace:
+        sub = db.query(Subscription).filter(Subscription.tenant_id == membership.workspace.tenant_id).first()
+        if sub:
+            plan_id = sub.plan_id
+
+    token = AuthService.create_access_token(data={"sub": user.email, "user_id": user.id, "workspace_id": workspace_id})
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": user
+        "user": {
+            "id": user.id,
+            "uuid": user.uuid,
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_active": user.is_active,
+            "workspace_id": workspace_id,
+            "plan_id": plan_id
+        }
     }
 
 @router.get("/me", response_model=UserResponse)
