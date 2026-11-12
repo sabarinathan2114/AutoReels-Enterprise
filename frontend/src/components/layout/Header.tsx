@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Film, Sparkles, LayoutDashboard, RefreshCw, UserCheck, LogOut, LogIn } from "lucide-react";
+import { Film, Sparkles, LayoutDashboard, Compass, CreditCard, LogOut, LogIn, UserCheck } from "lucide-react";
 import { CHANNELS_DATA, ChannelProfile } from "../hardcodedata";
 import { CosmicSelect } from "../common/FormControls";
 import { AuthStorage, AuthUserData } from "../common/authStorage";
 import { AuthModal } from "../auth/AuthModal";
+import { Badge } from "../common/Badge";
+
+export type NavTab = "landing" | "studio" | "dashboard" | "plans";
 
 interface HeaderProps {
-  activeTab: "studio" | "dashboard" | "channels";
-  onTabChange: (tab: "studio" | "dashboard" | "channels") => void;
+  activeTab: NavTab;
+  onTabChange: (tab: NavTab) => void;
   selectedChannelId: string;
   onChannelChange: (channelId: string) => void;
 }
@@ -24,7 +27,6 @@ export function Header({
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
-    // Check session storage on mount
     const savedUser = AuthStorage.getUser();
     if (savedUser) {
       setUser(savedUser);
@@ -38,11 +40,14 @@ export function Header({
 
   return (
     <>
-      <header className="sticky top-0 z-40 glass-panel border-b border-purple-500/20 px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <header className="sticky top-0 z-40 glass-panel border-b border-purple-500/20 px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 backdrop-blur-xl bg-black/70">
         {/* Brand & Title */}
         <div className="flex items-center justify-between w-full md:w-auto">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-violet-600 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.6)] flex-shrink-0">
+          <div
+            onClick={() => onTabChange("landing")}
+            className="flex items-center gap-2.5 cursor-pointer group"
+          >
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-violet-600 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.6)] flex-shrink-0 group-hover:scale-105 transition-transform">
               <Film className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div className="min-w-0">
@@ -78,34 +83,56 @@ export function Header({
         </div>
 
         {/* Center Tab Navigation (Scrollable on 320px) */}
-        <nav className="flex items-center gap-1 bg-purple-950/40 p-1 rounded-full border border-purple-500/20 overflow-x-auto max-w-full flex-shrink-0 self-center md:self-auto">
+        <nav className="flex items-center gap-1 bg-purple-950/40 p-1 rounded-full border border-purple-500/20 overflow-x-auto max-w-full flex-shrink-0 self-center md:self-auto scrollbar-none">
+          <button
+            onClick={() => onTabChange("landing")}
+            className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+              activeTab === "landing"
+                ? "btn-cosmic text-white font-semibold"
+                : "text-purple-300 hover:text-white"
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Overview</span>
+          </button>
           <button
             onClick={() => onTabChange("studio")}
-            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
               activeTab === "studio"
                 ? "btn-cosmic text-white font-semibold"
                 : "text-purple-300 hover:text-white"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-amber-300" />
             <span>Studio Creator</span>
           </button>
           <button
             onClick={() => onTabChange("dashboard")}
-            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
               activeTab === "dashboard"
                 ? "btn-cosmic text-white font-semibold"
                 : "text-purple-300 hover:text-white"
             }`}
           >
-            <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <LayoutDashboard className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Accounts & Stats</span>
+          </button>
+          <button
+            onClick={() => onTabChange("plans")}
+            className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+              activeTab === "plans"
+                ? "btn-cosmic text-white font-semibold"
+                : "text-purple-300 hover:text-white"
+            }`}
+          >
+            <CreditCard className="w-3.5 h-3.5 flex-shrink-0 text-emerald-400" />
+            <span>Plans</span>
           </button>
         </nav>
 
         {/* Right Section: Channel Switcher & Desktop Auth */}
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="flex-1 md:w-56 min-w-0">
+          <div className="flex-1 md:w-52 min-w-0">
             <CosmicSelect
               value={selectedChannelId}
               onChange={(e) => onChannelChange(e.target.value)}
@@ -123,12 +150,13 @@ export function Header({
             {user ? (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/60 border border-purple-500/30">
                 <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-xs text-purple-200 font-medium max-w-[110px] truncate">
+                <span className="text-xs text-purple-200 font-medium max-w-[100px] truncate">
                   {user.email.split("@")[0]}
                 </span>
+                <Badge variant="purple" className="text-[10px] py-0 px-1.5">Free</Badge>
                 <button
                   onClick={handleLogout}
-                  className="text-purple-400 hover:text-red-400 p-1"
+                  className="text-purple-400 hover:text-red-400 p-0.5 ml-1"
                   title="Log out"
                 >
                   <LogOut className="w-3 h-3" />

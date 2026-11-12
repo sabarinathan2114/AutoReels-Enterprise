@@ -437,3 +437,141 @@ export const ACTIVITY_LOGS_DATA: ActivityLogItem[] = [
     timestamp: "3 days ago"
   }
 ];
+
+// -------------------------------------------------------------
+// PHASE 3: LANDING PAGE & ONBOARDING DATA (ZERO HARDCODING IN UI)
+// -------------------------------------------------------------
+
+export interface HowItWorksStep {
+  step: string;
+  title: string;
+  description: string;
+  badge: string;
+  iconName: "wand" | "mic" | "sparkles" | "share2";
+}
+
+export interface FeatureItem {
+  id: string;
+  title: string;
+  description: string;
+  highlight: string;
+  tag: string;
+}
+
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+export const LANDING_HERO_DATA = {
+  badge: "⚡ AutoReels v2.0 • 100% Free-First Pipeline",
+  headlinePrefix: "Turn One Click Into",
+  headlineHighlight: "Viral 9:16 Vertical Reels",
+  description: "Autonomous end-to-end video synthesis powered by free neural TTS, open AI visuals, and kinetic captions. Zero cash cost. No credit card required.",
+  primaryCta: "Start Creating Free (2 Videos/mo)",
+  secondaryCta: "Compare Plans",
+  stats: [
+    { label: "Cost Per Render", value: "$0.00 Free" },
+    { label: "Aspect Ratio", value: "9:16 Vertical" },
+    { label: "Supported Platforms", value: "YT / IG / FB" },
+    { label: "Render Pacing", value: "CPU-Optimized" }
+  ]
+};
+
+export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
+  {
+    step: "01",
+    title: "Choose Topic or Premise",
+    description: "Select from proven viral niches (Emotional Drama, Tech News, Comedy, Geopolitics) or enter any premise in English or regional languages like Tamil.",
+    badge: "Input Stage",
+    iconName: "wand"
+  },
+  {
+    step: "02",
+    title: "AI Directs Scenes & Speech",
+    description: "Our blueprint engine creates scene breakdown, prompt art, and generates hyper-realistic neural voiceovers with word-level subtitle timings.",
+    badge: "Synthesis Stage",
+    iconName: "mic"
+  },
+  {
+    step: "03",
+    title: "Render & 1-Click Dispatch",
+    description: "FFmpeg stitches visual frames with kinetic karaoke captions and burns safe-zone layout for instant download or multi-platform broadcasting.",
+    badge: "Delivery Stage",
+    iconName: "sparkles"
+  }
+];
+
+export const FEATURE_SHOWCASE_DATA: FeatureItem[] = [
+  {
+    id: "feat_tts",
+    title: "Neural Multi-Voice Synthesis",
+    description: "Studio-quality speech generation across 300+ natural voices and 80+ locales via zero-cost neural pipelines.",
+    highlight: "Zero Cost",
+    tag: "Voice Engine"
+  },
+  {
+    id: "feat_captions",
+    title: "Kinetic Word-by-Word Subtitles",
+    description: "High-retention glowing karaoke captions burned via FFmpeg libass with safe zones preventing UI overlap on TikTok and Reels.",
+    highlight: "Safe Zones",
+    tag: "Video Engine"
+  },
+  {
+    id: "feat_ladder",
+    title: "Free Visual Ladder",
+    description: "Automatic progressive fallback from Pexels/Pixabay portrait stock to typographic gradients and open AI image models.",
+    highlight: "Fail-Safe",
+    tag: "Media Engine"
+  },
+  {
+    id: "feat_tenancy",
+    title: "Isolated Workspaces & Tenancy",
+    description: "Multi-tenant architecture isolating projects, channels, and usage quotas per team with full workspace scoping.",
+    highlight: "Isolated",
+    tag: "Security"
+  },
+  {
+    id: "feat_autopilot",
+    title: "Multi-Account Social Dispatch",
+    description: "Broadcast ready-to-watch reels to YouTube Shorts, Instagram Reels, and Facebook Pages in a single click.",
+    highlight: "Auto-Post",
+    tag: "Publishing"
+  },
+  {
+    id: "feat_plans",
+    title: "Free-First Plan Architecture",
+    description: "Sign up on Free tier with 2 free monthly renders, with seamless upgrade request workflows for high-volume creators.",
+    highlight: "2 Videos/mo Free",
+    tag: "Entitlements"
+  }
+];
+
+export const FAQ_ITEMS: FaqItem[] = [
+  {
+    id: "faq_1",
+    question: "Is AutoReels really zero cash cost to run?",
+    answer: "Yes! In accordance with Master Build Spec v2.0 Section 15, AutoReels utilizes only zero-cost and open-source tools: Edge-TTS/Piper, FFmpeg libass captions, local/open visual APIs, and MySQL. No paid API keys are required for the primary creation path."
+  },
+  {
+    id: "faq_2",
+    question: "What are the exact video outputs and formats?",
+    answer: "Videos are rendered as 9:16 vertical MP4s (720x1280 on the Free tier, 1080x1920 HD on Plan A/B/C) with AAC audio, centered animated subtitles within social safe zones (18% bottom, 8% top), and optimal viral pacing."
+  },
+  {
+    id: "faq_3",
+    question: "What does the Free Plan include?",
+    answer: "The Free Plan includes 2 complete vertical video renders per calendar month, 30-second max duration, 720p vertical resolution, 2 neural voices, and direct MP4 downloads."
+  },
+  {
+    id: "faq_4",
+    question: "How do upgrades work if there is no payment gateway yet?",
+    answer: "Plans A, B, and C are stored as database data. Creators can submit a 'Request Upgrade' directly from the plans comparison table or dashboard. A platform administrator reviews and approves the tier."
+  },
+  {
+    id: "faq_5",
+    question: "Can I manage multiple YouTube and Instagram channels?",
+    answer: "Yes! Depending on your workspace tier, you can link 1 channel (Plan A), 3 channels (Plan B), or up to 10 channels (Plan C) for automated cross-platform broadcasting."
+  }
+];

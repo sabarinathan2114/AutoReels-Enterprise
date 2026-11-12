@@ -17,3 +17,13 @@ PLAN-001,Plans As Data Seeded from Spec 15.4,Phase 2,backend/tests/test_plans.py
 PLAN-002,Live Database Plan Endpoint (GET /api/plans),Phase 2,backend/tests/test_health.py::test_plans_matrix,PASSED,2026-11-12
 AUTH-001,Atomic Signup Tenant & Subscription Provisioning,Phase 2,backend/tests/test_auth_tenancy.py::test_signup_provisions_tenant_and_free_plan,PASSED,2026-11-12
 AUTH-002,Login Workspace Scoping & Plan Resolution,Phase 2,backend/tests/test_auth_tenancy.py::test_login_returns_tenant_workspace_and_plan,PASSED,2026-11-12
+PAGE-001,Public Landing Page Hero with 9:16 Video Mockup,Phase 3,frontend/src/components/landing/HeroSection.tsx,PASSED,2026-11-12
+PAGE-002,How It Works 3-Step Interactive Process,Phase 3,frontend/src/components/landing/HowItWorksSection.tsx,PASSED,2026-11-12
+PAGE-003,Live Plan Comparison Table from MySQL API,Phase 3,frontend/src/components/landing/LivePlanComparison.tsx,PASSED,2026-11-12
+PAGE-004,Features Showcase 6-Card Enterprise Grid,Phase 3,frontend/src/components/landing/FeaturesSection.tsx,PASSED,2026-11-12
+PAGE-005,Interactive FAQ Accordion,Phase 3,frontend/src/components/landing/FaqSection.tsx,PASSED,2026-11-12
+PAGE-006,System Status Footer with Navigation Links,Phase 3,frontend/src/components/landing/Footer.tsx,PASSED,2026-11-12
+PAGE-007,3-Step Interactive Onboarding Modal,Phase 3,frontend/src/components/onboarding/OnboardingModal.tsx,PASSED,2026-11-12
+PAGE-008,Import-Only Route Architecture in src/app,Phase 3,Next.js 16 build (7/7 routes static),PASSED,2026-11-12
+PAGE-009,Strict 320px Mobile Responsiveness,Phase 3,Tailwind Breakpoints Check,PASSED,2026-11-12
+PAGE-010,Zero Hardcoded UI Data (src/components/hardcodedata),Phase 3,Hardcodedata index exports,PASSED,2026-11-12
