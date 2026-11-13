@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime, ForeignKey, Text, JSON, BigInteger
+    Column, Integer, String, Boolean, DateTime, ForeignKey, Text, JSON, BigInteger, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -192,14 +192,51 @@ class RenderJob(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
     project_id = Column(Integer, ForeignKey("video_projects.id", ondelete="SET NULL"), nullable=True)
-    status = Column(String(50), default="queued")  # queued, processing, completed, failed
+    title = Column(String(255), default="Untitled Reel")
+    status = Column(String(50), default="queued")  # queued, processing, completed, failed, needs_attention, succeeded_degraded
+    current_step = Column(String(50), nullable=True)
+    degraded = Column(Boolean, default=False)
+    plan_tier = Column(String(50), default="free")
+    estimated_duration_sec = Column(Integer, default=90)
+    heartbeat_at = Column(DateTime, nullable=True)
     progress_percent = Column(Integer, default=0)
     error_message = Column(Text, nullable=True)
+    output_video_path = Column(String(500), nullable=True)
     output_video_url = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     workspace = relationship("Workspace", back_populates="render_jobs")
+    steps = relationship("JobStep", back_populates="job", cascade="all, delete-orphan", order_by="JobStep.scene_index")
+
+
+class JobStep(Base):
+    __tablename__ = "job_steps"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    job_id = Column(String(36), ForeignKey("render_jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    step_key = Column(String(50), nullable=False)  # script, image, tts, align, compose
+    scene_index = Column(Integer, nullable=True)   # NULL for job-level steps, 0..N for per-scene steps
+    status = Column(String(50), nullable=False, default="PENDING")  # PENDING, RUNNING, SUCCEEDED, FAILED, SKIPPED, DEGRADED
+    attempt = Column(Integer, default=0)
+    provider = Column(String(100), nullable=True)
+    input_hash = Column(String(64), nullable=False, index=True)
+    output_asset_id = Column(String(36), nullable=True)
+    output_payload = Column(JSON, nullable=True)
+    error_class = Column(String(50), nullable=True)  # TRANSIENT, PROVIDER_DOWN, CONTENT_REJECTED, INVALID_INPUT, QUOTA_EXHAUSTED, AUTH_EXPIRED, FATAL
+    error_detail = Column(Text, nullable=True)
+    cost_micros = Column(BigInteger, default=0)
+    heartbeat_at = Column(DateTime, nullable=True)
+    started_at = Column(DateTime, nullable=True)
+    finished_at = Column(DateTime, nullable=True)
+
+    job = relationship("RenderJob", back_populates="steps")
+    workspace = relationship("Workspace")
+
+    __table_args__ = (
+        UniqueConstraint("job_id", "step_key", "scene_index", name="uq_job_step_scene"),
+    )
 
 
 class AuditLog(Base):

@@ -187,6 +187,26 @@ class EntitlementService:
         }
 
     @staticmethod
+    def refund_video_quota(db: Session, workspace_id: str) -> None:
+        """
+        Atomically refunds (decrements) consumed video quota upon platform failure.
+        Spec Section 4.2 / 15.10 (Quota refund on platform failure).
+        """
+        period = datetime.now(timezone.utc).strftime("%Y-%m")
+        db.execute(
+            text("""
+                UPDATE usage_counters
+                SET count = GREATEST(0, count - 1), updated_at = NOW()
+                WHERE workspace_id = :workspace_id
+                  AND period = :period
+                  AND metric = 'videos_rendered'
+            """),
+            {"workspace_id": workspace_id, "period": period}
+        )
+        db.commit()
+        EntitlementService.invalidate_cache(workspace_id)
+
+    @staticmethod
     def require_feature(feature_name: str):
         """
         FastAPI Dependency checking if current workspace has entitlement for a feature.

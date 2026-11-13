@@ -22,6 +22,7 @@ dist/
 # Environment & Local storage
 .env
 .env.local
+storage/
 backend/storage/audio/*
 backend/storage/images/*
 backend/storage/video/*

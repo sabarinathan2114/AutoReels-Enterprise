@@ -33,6 +33,33 @@ class MediaService:
                 raise Exception(f"Failed to generate AI image. Status: {response.status_code}")
 
     @staticmethod
+    def generate_ai_image_sync(
+        prompt: str,
+        output_filename: str,
+        width: int = 720,
+        height: int = 1280,
+        model: str = "flux"
+    ) -> str:
+        output_dir = os.path.join("storage", "images")
+        os.makedirs(output_dir, exist_ok=True)
+        file_path = os.path.join(output_dir, output_filename)
+        encoded_prompt = urllib.parse.quote(prompt)
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&model={model}&nologo=true&enhance=true"
+        try:
+            with httpx.Client(timeout=30.0) as client:
+                res = client.get(url)
+                if res.status_code == 200:
+                    with open(file_path, "wb") as f:
+                        f.write(res.content)
+                    return file_path
+        except Exception:
+            pass
+        fallback_path = os.path.join("storage", "images", "fallback.jpg")
+        if os.path.exists(fallback_path):
+            return fallback_path
+        return file_path
+
+    @staticmethod
     async def search_free_stock_video(
         keyword: str,
         output_filename: str,

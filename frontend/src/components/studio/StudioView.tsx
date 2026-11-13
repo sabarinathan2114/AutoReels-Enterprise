@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import { StoryDirector } from "./StoryDirector";
 import { SceneTimeline } from "./SceneTimeline";
 import { VideoPreviewPlayer } from "./VideoPreviewPlayer";
+import { StepLedgerInspector } from "./StepLedgerInspector";
+import { StepLedgerItem, PIPELINE_STRINGS } from "../hardcodedata/pipeline";
+import { Layers } from "lucide-react";
 import {
   DEFAULT_BLUEPRINT,
   BlueprintData,
@@ -31,6 +34,48 @@ export function StudioView() {
   const [isRendering, setIsRendering] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
+
+  // Step-Ledger Orchestrator state
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isLedgerOpen, setIsLedgerOpen] = useState(false);
+  const [ledgerSteps, setLedgerSteps] = useState<StepLedgerItem[]>([]);
+  const [isDegraded, setIsDegraded] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleOpenLedger = async () => {
+    setIsLedgerOpen(true);
+    if (activeJobId) {
+      try {
+        const res = await fetch(`http://localhost:8000/api/v1/jobs/${activeJobId}/ledger`);
+        if (res.ok) {
+          const d = await res.json();
+          setLedgerSteps(d.steps || []);
+          setIsDegraded(d.degraded || false);
+        }
+      } catch (e) {
+        console.warn("Failed to fetch ledger:", e);
+      }
+    }
+  };
+
+  const handleRetryJob = async (jobId: string) => {
+    setIsRetrying(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/jobs/${jobId}/retry`, { method: "POST" });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.output_video_url) setVideoUrl(d.output_video_url);
+        const lRes = await fetch(`http://localhost:8000/api/v1/jobs/${jobId}/ledger`);
+        if (lRes.ok) {
+          const ld = await lRes.json();
+          setLedgerSteps(ld.steps || []);
+          setIsDegraded(ld.degraded || false);
+        }
+      }
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   // Selected social accounts
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>(
@@ -257,7 +302,27 @@ export function StudioView() {
           onPublish={handlePublishAll}
           publishSuccess={publishSuccess}
         />
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={handleOpenLedger}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/60 border border-purple-500/30 text-purple-200 hover:text-white text-xs font-mono transition-all"
+          >
+            <Layers className="w-3.5 h-3.5 text-purple-400" />
+            <span>{PIPELINE_STRINGS.openLedger}</span>
+          </button>
+        </div>
       </div>
+
+      {/* Durable Step-Ledger DAG Inspector Modal */}
+      <StepLedgerInspector
+        isOpen={isLedgerOpen}
+        onClose={() => setIsLedgerOpen(false)}
+        jobId={activeJobId}
+        steps={ledgerSteps}
+        isDegraded={isDegraded}
+        onRetry={handleRetryJob}
+        isRetrying={isRetrying}
+      />
     </div>
   );
 }

@@ -40,3 +40,13 @@ ADM-005,Plan Limit Edit Immediate Cache Invalidation <60s (PLAN-04),Phase 5,back
 ADM-006,Transactional Audit Commit & Fault Injection Rollback (ADM-T2),Phase 5,backend/tests/test_admin.py::test_adm_t2_forced_audit_failure_rolls_back_action,PASSED,2026-11-12
 ADM-007,Global Daily Render Cap & Audit Log Ledger,Phase 5,backend/tests/test_admin.py::test_admin_settings_daily_cap_and_audit_log,PASSED,2026-11-12
 ADM-008,Super Admin Console UI with 5 Modular Tabs,Phase 5,frontend/src/app/admin/page.tsx Next.js build,PASSED,2026-11-12
+PIPE-001,Step-Ledger Orchestrator with Deterministic Input Hash Idempotency,Phase 6,backend/tests/test_pipeline_spine.py::test_idempotent_step_execution_skips_rerun,PASSED,2026-11-12
+PIPE-002,Jittered Exponential Backoff Retry Loop on Transient Failures,Phase 6,backend/tests/test_pipeline_spine.py::test_partial_failure_retry_with_jitter,PASSED,2026-11-12
+PIPE-003,Circuit Breaker Fallback Chain Across Providers (Flux to Pollock to Solid),Phase 6,backend/tests/test_pipeline_spine.py::test_circuit_breaker_and_provider_fallback,PASSED,2026-11-12
+PIPE-004,Visual Degradation Policy Preserving Audio/Narrative (succeeded_degraded),Phase 6,backend/tests/test_pipeline_spine.py::test_degradation_policy_on_image_exhaustion,PASSED,2026-11-12
+PIPE-005,Platform Fatal Error Automatic Quota Refund (Restitution),Phase 6,backend/tests/test_pipeline_spine.py::test_platform_fatal_error_refunds_quota,PASSED,2026-11-12
+PIPE-006,Heartbeat Timeout Dead-Letter Reaper Job & Step Recovery,Phase 6,backend/tests/test_pipeline_spine.py::test_orchestrator_reaper_stale_heartbeat_recovery,PASSED,2026-11-12
+PIPE-007,Weighted Fair Queue (WFQ) Guaranteed Free Share >=20% (CAP-02),Phase 6,backend/tests/test_pipeline_spine.py::test_weighted_fair_queue_guaranteed_free_share_cap_02,PASSED,2026-11-12
+PIPE-008,Admission Control Daily Cap Protection with Honest ETA (CAP-01),Phase 6,backend/tests/test_pipeline_spine.py::test_admission_control_daily_cap_protection_cap_01,PASSED,2026-11-12
+PIPE-009,Full Pipeline DAG Submission & Step-Ledger Observability API,Phase 6,backend/tests/test_pipeline_spine.py::test_full_pipeline_dag_submission_and_ledger_api,PASSED,2026-11-12
+PIPE-010,Frontend Step-Ledger Real-Time Inspector UI Component,Phase 6,frontend/src/components/studio/StepLedgerInspector.tsx,PASSED,2026-11-12

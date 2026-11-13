@@ -86,3 +86,28 @@ class VoiceService:
             "srt_content": srt_content,
             "voice": voice
         }
+
+    @staticmethod
+    def generate_speech_sync(
+        text: str,
+        voice: str = "ta-IN-ValluvarNeural",
+        rate: str = "+0%",
+        pitch: str = "+0Hz",
+        output_audio_path: str = "storage/audio/speech.mp3"
+    ) -> Dict[str, Any]:
+        """Synchronous wrapper for Edge-TTS synthesis."""
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Inside already running loop
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    return pool.submit(
+                        asyncio.run,
+                        VoiceService.generate_speech_with_subtitles(text, voice, rate, pitch, output_audio_path)
+                    ).result()
+        except Exception:
+            pass
+        return asyncio.run(
+            VoiceService.generate_speech_with_subtitles(text, voice, rate, pitch, output_audio_path)
+        )
