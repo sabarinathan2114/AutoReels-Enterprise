@@ -155,7 +155,16 @@ export function StoryDirector({
             <Flame className="w-3.5 h-3.5 text-amber-400" />
             Trend Radar (Zero Scraping)
           </span>
-          <span className="text-[10px] text-purple-400">Viral Velocity</span>
+          <button
+            type="button"
+            onClick={() => {
+              const rand = CURATED_VIRAL_TRENDS[Math.floor(Math.random() * CURATED_VIRAL_TRENDS.length)];
+              if (rand) onTopicChange(rand.title);
+            }}
+            className="text-[10px] text-amber-300 hover:text-white font-medium bg-amber-950/40 hover:bg-amber-900/60 px-2 py-0.5 rounded border border-amber-500/30 transition-all flex items-center gap-1"
+          >
+            <span>🎲 Surprise Me</span>
+          </button>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {CURATED_VIRAL_TRENDS.map((tr) => (

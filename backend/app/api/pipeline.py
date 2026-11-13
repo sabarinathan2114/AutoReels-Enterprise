@@ -1,6 +1,9 @@
 import uuid
+import json
+import asyncio
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -293,3 +296,76 @@ async def execute_real_free_pipeline(req: RealRenderRequest, db: Session = Depen
         "script": script.model_dump(),
         "qa_report": qa_report.model_dump()
     }
+
+@router.get("/{job_id}/stream")
+async def stream_job_progress(job_id: str, db: Session = Depends(get_db)):
+    """
+    Spec Phase 8: Live job progress over Server-Sent Events (SSE) with honest ETA.
+    Streams incremental state changes, DAG steps, and heartbeat timestamps.
+    """
+    job = db.query(RenderJob).filter(RenderJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    async def event_generator():
+        for _ in range(60):
+            db.expire_all()
+            current_job = db.query(RenderJob).filter(RenderJob.id == job_id).first()
+            if not current_job:
+                break
+
+            steps = db.query(JobStep).filter(JobStep.job_id == job_id).all()
+            steps_data = [
+                {
+                    "step_key": s.step_key,
+                    "scene_index": s.scene_index,
+                    "status": s.status,
+                    "provider": s.provider,
+                    "attempt": s.attempt
+                }
+                for s in steps
+            ]
+
+            payload = {
+                "job_id": current_job.id,
+                "status": current_job.status,
+                "current_step": current_job.current_step,
+                "progress_percent": current_job.progress_percent,
+                "degraded": current_job.degraded,
+                "output_video_url": current_job.output_video_url,
+                "estimated_duration_sec": current_job.estimated_duration_sec,
+                "steps": steps_data
+            }
+
+            yield f"data: {json.dumps(payload)}\n\n"
+
+            if current_job.status in ("completed", "succeeded_degraded", "failed", "cancelled"):
+                yield "event: complete\ndata: {}\n\n"
+                break
+
+            await asyncio.sleep(1.0)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+@router.get("/workspace/{workspace_id}")
+def get_workspace_jobs_history(workspace_id: str, limit: int = 20, db: Session = Depends(get_db)):
+    """
+    Spec Phase 8: Returns history of rendered reels for the workspace.
+    """
+    jobs = db.query(RenderJob).filter(
+        RenderJob.workspace_id == workspace_id
+    ).order_by(RenderJob.created_at.desc()).limit(limit).all()
+
+    return [
+        {
+            "id": j.id,
+            "title": j.title,
+            "status": j.status,
+            "degraded": j.degraded,
+            "output_video_url": j.output_video_url,
+            "plan_tier": j.plan_tier,
+            "estimated_duration_sec": j.estimated_duration_sec,
+            "created_at": j.created_at.isoformat() if j.created_at else None
+        }
+        for j in jobs
+    ]

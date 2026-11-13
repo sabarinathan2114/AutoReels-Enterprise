@@ -301,6 +301,9 @@ export function StudioView() {
           isPublishing={isPublishing}
           onPublish={handlePublishAll}
           publishSuccess={publishSuccess}
+          isDegraded={isDegraded}
+          onRetry={() => activeJobId && handleRetryJob(activeJobId)}
+          isRetrying={isRetrying}
         />
         <div className="mt-3 flex justify-end">
           <button

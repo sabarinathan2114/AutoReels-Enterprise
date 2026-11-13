@@ -62,3 +62,9 @@ SUB-001,Word-Level Subtitle Alignment (<80ms drift) & Kinetic ASS Bouncing,Phase
 COMP-001,Real FFmpeg Composition to 9:16 Vertical MP4 (H.264/AAC),Phase 7,backend/tests/test_real_generation_pipeline.py::test_full_ffmpeg_video_composition_and_qa_gates_comp_01_qa_all,PASSED,2026-11-13
 QA-001,Automated Quality Assurance Gates QA-01 to QA-08 All Passing,Phase 7,backend/tests/test_real_generation_pipeline.py::test_full_ffmpeg_video_composition_and_qa_gates_comp_01_qa_all,PASSED,2026-11-13
 FREE-001,Zero Cash Cost Marginal Generation Constraint Guarantee,Phase 7,backend/tests/test_real_generation_pipeline.py::test_full_ffmpeg_video_composition_and_qa_gates_comp_01_qa_all,PASSED,2026-11-13
+STUDIO-001,Studio Trend Radar Surprise Me One-Click Topic Generator,Phase 8,frontend/src/components/studio/StoryDirector.tsx,PASSED,2026-11-13
+STUDIO-002,Live Server-Sent Events (SSE) DAG Progress Streaming,Phase 8,backend/tests/test_studio_viewing_ui.py::test_job_sse_stream_endpoint,PASSED,2026-11-13
+STUDIO-003,Workspace Render History & Media URL Retrieval Endpoint,Phase 8,backend/tests/test_studio_viewing_ui.py::test_workspace_jobs_history_endpoint,PASSED,2026-11-13
+STUDIO-004,Interactive 9:16 Video Player with Scrubbing & Audio Controls,Phase 8,frontend/src/components/studio/VideoPreviewPlayer.tsx,PASSED,2026-11-13
+STUDIO-005,Plan-Aware Video Downloader (Watermarked Free vs Pristine 1080p),Phase 8,frontend/src/components/studio/VideoPreviewPlayer.tsx,PASSED,2026-11-13
+STUDIO-006,Free Tier Monthly Quota Block Enforcement on 3rd Video (HTTP 429),Phase 8,backend/tests/test_studio_viewing_ui.py::test_third_video_in_month_blocked_with_clear_message,PASSED,2026-11-13
