@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -8,8 +9,31 @@ from app.models.entities import RenderJob, JobStep, Workspace
 from app.orchestration.pipeline import PipelineSpineOrchestrator
 from app.orchestration.fair_queue import FairQueueAdmissionController
 from app.services.entitlement_service import EntitlementService
+from app.services.trend_radar import TrendRadarService, TrendItem
+from app.services.script_engine import ScriptEngine, ReelScript
+from app.services.visual_ladder import VisualLadderService
+from app.services.tts_service import TTSService
+from app.services.subtitle_aligner import SubtitleAlignerService
+from app.services.video_composer import VideoComposerService, CompositionPlan, SceneMediaItem
+from app.services.qa_gates import QAGatesService, FullQAReport
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["Pipeline Spine & Step-Ledger"])
+
+class CompileScriptRequest(BaseModel):
+    topic: str
+    niche: Optional[str] = "daily_facts"
+    target_duration: Optional[int] = 30
+    voice_mode: Optional[str] = "solo_male"
+    hook_formula: Optional[str] = "curiosity_gap"
+
+class RealRenderRequest(BaseModel):
+    workspace_id: str
+    topic: str
+    niche: Optional[str] = "daily_facts"
+    target_duration: Optional[int] = 30
+    voice_mode: Optional[str] = "solo_male"
+    hook_formula: Optional[str] = "curiosity_gap"
+    allow_network: Optional[bool] = False
 
 class SubmitJobRequest(BaseModel):
     workspace_id: str
@@ -119,3 +143,153 @@ def retry_failed_job_steps(job_id: str, db: Session = Depends(get_db)):
         custom_job_id=job.id
     )
     return result
+
+@router.get("/trends", response_model=List[TrendItem])
+async def get_viral_trends(category: str = "all"):
+    """
+    Trend Radar v1 endpoint (Spec 2.2 #6).
+    Returns real-time curated trends with velocity scoring and SSRF-hardened summaries.
+    """
+    return await TrendRadarService.fetch_curated_trends(category=category)
+
+@router.post("/compile-script", response_model=ReelScript)
+def compile_reel_script(req: CompileScriptRequest):
+    """
+    Script Engine & Prompt Compiler (Spec 4.1).
+    Transforms topics into high-retention 3-act scripts with strict JSON schema validation.
+    """
+    return ScriptEngine.generate_script(
+        topic=req.topic,
+        niche=req.niche or "daily_facts",
+        target_duration=req.target_duration or 30,
+        voice_mode=req.voice_mode or "solo_male",
+        hook_formula=req.hook_formula or "curiosity_gap"
+    )
+
+@router.post("/render-real")
+async def execute_real_free_pipeline(req: RealRenderRequest, db: Session = Depends(get_db)):
+    """
+    Phase 7 Real Free Generation Pipeline (End of the video flow).
+    Generates script -> multi-speaker TTS -> kinetic ASS subtitles -> visual scenes -> FFmpeg video -> QA gates.
+    Strictly zero marginal cash cost (FREE-01).
+    """
+    # 1. Resolve workspace & entitlements
+    workspace = db.query(Workspace).filter(Workspace.id == req.workspace_id).first()
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+
+    entitlements = EntitlementService.get_effective_entitlements(db, req.workspace_id)
+    plan_tier = entitlements.get("plan_id", "free")
+    watermark = entitlements.get("watermark", True)
+    target_w = 720 if plan_tier == "free" else 1080
+    target_h = 1280 if plan_tier == "free" else 1920
+
+    # 2. Consume quota
+    EntitlementService.consume_video_quota(db, req.workspace_id)
+
+    # 3. Compile Script
+    script = ScriptEngine.generate_script(
+        topic=req.topic,
+        niche=req.niche or "daily_facts",
+        target_duration=req.target_duration or 30,
+        voice_mode=req.voice_mode or "solo_male",
+        hook_formula=req.hook_formula or "curiosity_gap"
+    )
+
+    job_id = str(uuid.uuid4())
+    job = RenderJob(
+        id=job_id,
+        workspace_id=req.workspace_id,
+        title=script.title,
+        status="processing",
+        plan_tier=plan_tier,
+        estimated_duration_sec=30,
+        current_step="audio_synthesis",
+        progress_percent=20
+    )
+    db.add(job)
+    db.commit()
+
+    # 4. Multi-Speaker Audio Synthesis
+    tts_result = await TTSService.synthesize(
+        text_or_blocks=script.scenes[0].narration,
+        output_filename=f"job_{job_id}_tts.wav",
+        allow_network=req.allow_network
+    )
+
+    # 5. Kinetic Subtitle Generation (ASS)
+    chunks = SubtitleAlignerService.generate_word_alignments(tts_result.segments)
+    ass_path = SubtitleAlignerService.create_ass_script(
+        chunks=chunks,
+        output_filename=f"job_{job_id}_captions.ass",
+        video_width=target_w,
+        video_height=target_h
+    )
+
+    # 6. Visual Scenes (Image Ladder)
+    job.current_step = "visual_generation"
+    job.progress_percent = 50
+    db.commit()
+
+    scene_items: List[SceneMediaItem] = []
+    is_degraded = False
+    for sc in script.scenes[:3]:  # Generate primary scenes
+        vis = await VisualLadderService.generate_scene_visual(
+            prompt=sc.visual_description,
+            output_filename=f"job_{job_id}_scene_{sc.scene_index}.jpg",
+            scene_index=sc.scene_index,
+            width=target_w,
+            height=target_h,
+            allow_network=req.allow_network
+        )
+        if vis.degraded:
+            is_degraded = True
+        scene_items.append(SceneMediaItem(
+            image_path=vis.file_path,
+            duration_sec=max(1.5, tts_result.duration_sec / 3.0),
+            scene_index=sc.scene_index
+        ))
+
+    # 7. Video Composition via FFmpeg
+    job.current_step = "video_composition"
+    job.progress_percent = 80
+    db.commit()
+
+    out_mp4_name = f"autoreels_{job_id}.mp4"
+    rendered_video_path = VideoComposerService.compose_video(CompositionPlan(
+        scenes=scene_items,
+        audio_path=tts_result.audio_path,
+        subtitle_ass_path=ass_path,
+        output_filename=out_mp4_name,
+        plan_tier=plan_tier,
+        target_width=target_w,
+        target_height=target_h,
+        apply_watermark=watermark
+    ))
+
+    # 8. Automated QA Evaluation (QA-01 to QA-08)
+    qa_report = QAGatesService.evaluate_video(
+        video_path=rendered_video_path,
+        plan_tier=plan_tier,
+        is_degraded=is_degraded,
+        max_duration_sec=60.0
+    )
+
+    job.status = "succeeded_degraded" if is_degraded else "completed"
+    job.current_step = "finished"
+    job.progress_percent = 100
+    job.degraded = is_degraded
+    job.output_video_path = rendered_video_path
+    job.output_video_url = f"/storage/video/{out_mp4_name}"
+    db.commit()
+
+    return {
+        "job_id": job.id,
+        "status": job.status,
+        "title": script.title,
+        "degraded": is_degraded,
+        "output_video_path": rendered_video_path,
+        "output_video_url": job.output_video_url,
+        "script": script.model_dump(),
+        "qa_report": qa_report.model_dump()
+    }

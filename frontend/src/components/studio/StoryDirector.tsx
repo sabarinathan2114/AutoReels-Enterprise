@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Sparkles, Volume2, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Sparkles, Volume2, ShieldCheck, SlidersHorizontal, Flame, Gauge } from "lucide-react";
 import { GlassPanel } from "../common/GlassPanel";
 import { Badge } from "../common/Badge";
 import { CosmicButton } from "../common/CosmicButton";
 import { CosmicSelect, CosmicTextarea } from "../common/FormControls";
 import { NICHES_DATA, VOICES_DATA, PLANS_DATA, PlanTier } from "../hardcodedata";
+import { CURATED_VIRAL_TRENDS, HOOK_FORMULAS } from "../hardcodedata/pipeline";
 
 interface StoryDirectorProps {
   niche: string;
@@ -39,9 +40,12 @@ export function StoryDirector({
 }: StoryDirectorProps) {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [directorMode, setDirectorMode] = useState<"zero_input" | "director">("director");
+  const [hookFormula, setHookFormula] = useState("curiosity_gap");
 
   const wordCount = narrationScript.trim() ? narrationScript.trim().split(/\s+/).length : 0;
-  const estimatedSeconds = Math.round(wordCount / 2.5);
+  const estimatedSeconds = Math.max(3, Math.round(wordCount / 2.5));
+  const wpm = estimatedSeconds > 0 ? Math.round((wordCount / (estimatedSeconds / 60))) : 0;
+  const isPacingOptimal = wpm >= 120 && wpm <= 175;
 
   const handlePreviewVoice = async () => {
     setIsPlayingAudio(true);
@@ -144,6 +148,31 @@ export function StoryDirector({
         ))}
       </CosmicSelect>
 
+      {/* Trend Radar Chips */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[11px] text-purple-300">
+          <span className="flex items-center gap-1 font-semibold text-purple-200">
+            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            Trend Radar (Zero Scraping)
+          </span>
+          <span className="text-[10px] text-purple-400">Viral Velocity</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {CURATED_VIRAL_TRENDS.map((tr) => (
+            <button
+              key={tr.id}
+              type="button"
+              onClick={() => onTopicChange(tr.title)}
+              className="px-2 py-1 bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/30 hover:border-purple-400 rounded-lg text-[10px] text-purple-200 hover:text-white transition-all text-left flex items-center gap-1.5"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="truncate max-w-[200px]">{tr.title}</span>
+              <span className="text-amber-400 font-mono text-[9px]">{(tr.velocity_score * 100).toFixed(0)}%</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Topic Prompt */}
       <CosmicTextarea
         label="Topic or Story Premise"
@@ -152,6 +181,20 @@ export function StoryDirector({
         rows={3}
         placeholder="Enter your story idea..."
       />
+
+      {/* Hook Formula Selector */}
+      <CosmicSelect
+        label="Hook Strategy Formula"
+        hint={<span className="text-purple-400">3-Act Retention</span>}
+        value={hookFormula}
+        onChange={(e) => setHookFormula(e.target.value)}
+      >
+        {HOOK_FORMULAS.map((h) => (
+          <option key={h.id} value={h.id} className="bg-[#0b0814] text-white">
+            {h.label} — {h.desc}
+          </option>
+        ))}
+      </CosmicSelect>
 
       {/* Voice Synthesizer */}
       <CosmicSelect
@@ -191,9 +234,17 @@ export function StoryDirector({
 
       {/* Script Textarea */}
       <div className="pt-2">
+        <div className="flex items-center justify-between pb-1 text-xs">
+          <span className="text-purple-200 font-medium">Full Narration Script</span>
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+            isPacingOptimal
+              ? "text-emerald-300 border-emerald-500/40 bg-emerald-950/40"
+              : "text-amber-300 border-amber-500/40 bg-amber-950/40"
+          }`}>
+            {wpm} WPM {isPacingOptimal ? "✓ Optimal Pacing" : "• Adjust Length"} (~{estimatedSeconds}s)
+          </span>
+        </div>
         <CosmicTextarea
-          label="Full Narration Script"
-          hint={`~${estimatedSeconds}s (${wordCount} words)`}
           value={narrationScript}
           onChange={(e) => onNarrationChange(e.target.value)}
           rows={5}

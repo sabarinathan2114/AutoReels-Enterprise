@@ -50,3 +50,15 @@ PIPE-007,Weighted Fair Queue (WFQ) Guaranteed Free Share >=20% (CAP-02),Phase 6,
 PIPE-008,Admission Control Daily Cap Protection with Honest ETA (CAP-01),Phase 6,backend/tests/test_pipeline_spine.py::test_admission_control_daily_cap_protection_cap_01,PASSED,2026-11-12
 PIPE-009,Full Pipeline DAG Submission & Step-Ledger Observability API,Phase 6,backend/tests/test_pipeline_spine.py::test_full_pipeline_dag_submission_and_ledger_api,PASSED,2026-11-12
 PIPE-010,Frontend Step-Ledger Real-Time Inspector UI Component,Phase 6,frontend/src/components/studio/StepLedgerInspector.tsx,PASSED,2026-11-12
+RADAR-001,Trend Radar v1 Aggregator & Velocity Scoring,Phase 7,backend/tests/test_real_generation_pipeline.py::test_trend_radar_and_ssrf_protection_sec_13,PASSED,2026-11-13
+SEC-013,SSRF Defense Blocking Loopback and Private IP Networks,Phase 7,backend/tests/test_real_generation_pipeline.py::test_trend_radar_and_ssrf_protection_sec_13,PASSED,2026-11-13
+SEC-016,Prompt Injection Neutralization on Scraped & User Inputs,Phase 7,backend/tests/test_real_generation_pipeline.py::test_prompt_injection_sanitization_sec_16,PASSED,2026-11-13
+SCRIPT-001,3-Act Script Structure & Strict JSON Schema Validation,Phase 7,backend/tests/test_real_generation_pipeline.py::test_script_engine_3_act_structure_and_pacing_script_01,PASSED,2026-11-13
+SCRIPT-002,Pacing Guardrails & Words-Per-Minute Enforcement,Phase 7,backend/tests/test_real_generation_pipeline.py::test_script_engine_3_act_structure_and_pacing_script_01,PASSED,2026-11-13
+VIS-001,Image Ladder Procedural Gradient Canvas 100% Offline Fallback,Phase 7,backend/tests/test_real_generation_pipeline.py::test_visual_ladder_procedural_gradient_canvas_vis_01,PASSED,2026-11-13
+VIS-002,Free Plan Watermark Stamping & Paid Exemption,Phase 7,backend/tests/test_real_generation_pipeline.py::test_free_plan_watermark_stamping_vis_02,PASSED,2026-11-13
+TTS-001,Multi-Speaker Tag Parsing & 150ms Turn Gaps,Phase 7,backend/tests/test_real_generation_pipeline.py::test_multi_speaker_tts_with_speech_gaps_tts_01,PASSED,2026-11-13
+SUB-001,Word-Level Subtitle Alignment (<80ms drift) & Kinetic ASS Bouncing,Phase 7,backend/tests/test_real_generation_pipeline.py::test_subtitle_aligner_kinetic_ass_sub_01,PASSED,2026-11-13
+COMP-001,Real FFmpeg Composition to 9:16 Vertical MP4 (H.264/AAC),Phase 7,backend/tests/test_real_generation_pipeline.py::test_full_ffmpeg_video_composition_and_qa_gates_comp_01_qa_all,PASSED,2026-11-13
+QA-001,Automated Quality Assurance Gates QA-01 to QA-08 All Passing,Phase 7,backend/tests/test_real_generation_pipeline.py::test_full_ffmpeg_video_composition_and_qa_gates_comp_01_qa_all,PASSED,2026-11-13
+FREE-001,Zero Cash Cost Marginal Generation Constraint Guarantee,Phase 7,backend/tests/test_real_generation_pipeline.py::test_full_ffmpeg_video_composition_and_qa_gates_comp_01_qa_all,PASSED,2026-11-13

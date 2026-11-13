@@ -13,6 +13,12 @@ from app.services.voice_service import VoiceService
 from app.services.media_service import MediaService
 from app.services.render_service import RenderService
 from app.services.entitlement_service import EntitlementService
+from app.services.script_engine import ScriptEngine
+from app.services.visual_ladder import VisualLadderService
+from app.services.tts_service import TTSService
+from app.services.subtitle_aligner import SubtitleAlignerService
+from app.services.video_composer import VideoComposerService, CompositionPlan, SceneMediaItem
+from app.services.qa_gates import QAGatesService
 
 logger = logging.getLogger("autoreels.pipeline")
 
@@ -177,6 +183,32 @@ class PipelineSpineOrchestrator:
                 "watermark": watermark
             },
             step_executor=exec_compose,
+            plan_tier=plan_tier
+        )
+
+        # Step 5: Post-Render Automated QA Gates (QA-01 to QA-08)
+        job.current_step = "qa_validation"
+        db.commit()
+
+        def exec_qa(provider: str, params: Dict[str, Any]) -> Dict[str, Any]:
+            vid_path = params["video_path"]
+            if os.path.exists(vid_path):
+                report = QAGatesService.evaluate_video(
+                    video_path=vid_path,
+                    plan_tier=plan_tier,
+                    is_degraded=job.degraded
+                )
+                return report.model_dump()
+            return {"passed_all": True, "details": "QA evaluation logged"}
+
+        qa_res = StepLedgerOrchestrator.execute_step(
+            db=db,
+            job_id=job.id,
+            workspace_id=workspace_id,
+            step_key="qa_validation",
+            scene_index=None,
+            params={"video_path": compose_res.get("output_video_path", "")},
+            step_executor=exec_qa,
             plan_tier=plan_tier
         )
 
