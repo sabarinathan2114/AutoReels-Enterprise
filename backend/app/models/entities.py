@@ -113,6 +113,9 @@ class Subscription(Base):
 
 class UsageCounter(Base):
     __tablename__ = "usage_counters"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "period", "metric", name="uq_ws_period_metric"),
+    )
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -285,6 +288,11 @@ class SocialAccount(Base):
     access_token = Column(Text, nullable=True)
     refresh_token = Column(Text, nullable=True)
     is_connected = Column(Boolean, default=True)
+    health_status = Column(String(50), default="CONNECTED")  # CONNECTED, TOKEN_EXPIRED, REAUTH_REQUIRED, ERROR
+    privacy_status = Column(String(50), default="private")   # private (unaudited) vs public
+    resumable_session_uri = Column(Text, nullable=True)
+    daily_published_count = Column(Integer, default=0)
+    last_published_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     owner = relationship("User", back_populates="social_accounts")

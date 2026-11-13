@@ -120,26 +120,20 @@ class EntitlementService:
         limit = entitlements["monthly_quota"]
         period = datetime.now(timezone.utc).strftime("%Y-%m")
 
-        # 1. Ensure counter row exists
-        existing = db.query(UsageCounter).filter(
-            UsageCounter.workspace_id == workspace_id,
-            UsageCounter.period == period,
-            UsageCounter.metric == "videos_rendered"
-        ).first()
-
-        if not existing:
-            counter_id = str(uuid.uuid4())
-            try:
-                db.execute(
-                    text("""
-                        INSERT INTO usage_counters (id, workspace_id, period, metric, count, updated_at)
-                        VALUES (:id, :workspace_id, :period, 'videos_rendered', 0, NOW())
-                    """),
-                    {"id": counter_id, "workspace_id": workspace_id, "period": period}
-                )
-                db.commit()
-            except Exception:
-                db.rollback()
+        # 1. Ensure counter row exists via atomic MySQL upsert
+        counter_id = str(uuid.uuid4())
+        try:
+            db.execute(
+                text("""
+                    INSERT INTO usage_counters (id, workspace_id, period, metric, count, updated_at)
+                    VALUES (:id, :workspace_id, :period, 'videos_rendered', 0, NOW())
+                    ON DUPLICATE KEY UPDATE updated_at = NOW()
+                """),
+                {"id": counter_id, "workspace_id": workspace_id, "period": period}
+            )
+            db.commit()
+        except Exception:
+            db.rollback()
 
         # 2. Atomic increment with WHERE count < limit
         result = db.execute(

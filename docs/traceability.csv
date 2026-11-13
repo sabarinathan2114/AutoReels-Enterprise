@@ -68,3 +68,10 @@ STUDIO-003,Workspace Render History & Media URL Retrieval Endpoint,Phase 8,backe
 STUDIO-004,Interactive 9:16 Video Player with Scrubbing & Audio Controls,Phase 8,frontend/src/components/studio/VideoPreviewPlayer.tsx,PASSED,2026-11-13
 STUDIO-005,Plan-Aware Video Downloader (Watermarked Free vs Pristine 1080p),Phase 8,frontend/src/components/studio/VideoPreviewPlayer.tsx,PASSED,2026-11-13
 STUDIO-006,Free Tier Monthly Quota Block Enforcement on 3rd Video (HTTP 429),Phase 8,backend/tests/test_studio_viewing_ui.py::test_third_video_in_month_blocked_with_clear_message,PASSED,2026-11-13
+SOC-001,Token Envelope Encryption via AES-128 Fernet (SEC-03),Phase 9,backend/tests/test_social_channels.py::test_token_envelope_encryption_sec_03,PASSED,2026-11-13
+SOC-002,Google OAuth 2.0 PKCE Code Challenge Generation (S256),Phase 9,backend/tests/test_social_channels.py::test_google_oauth_pkce_generation,PASSED,2026-11-13
+SOC-003,Social Channel Feature Locked 403 on Free Plan,Phase 9,backend/tests/test_social_channels.py::test_free_plan_channel_connect_blocked_feature_locked,PASSED,2026-11-13
+SOC-004,Plan A / B / C Channel Limit Enforcement,Phase 9,backend/tests/test_social_channels.py::test_plan_a_channel_connection_and_limit_enforcement,PASSED,2026-11-13
+SOC-005,YouTube Resumable Upload Session URI & Byte Resumption Protocol,Phase 9,backend/tests/test_social_channels.py::test_youtube_resumable_upload_session_and_resume,PASSED,2026-11-13
+SOC-006,Daily Channel Cap Enforcement (Max 6 Shorts Per Day),Phase 9,backend/tests/test_social_channels.py::test_daily_channel_cap_enforcement,PASSED,2026-11-13
+SOC-007,Channel Health Lifecycle & Unaudited Private-vs-Public Detection,Phase 9,backend/tests/test_social_channels.py::test_plan_a_channel_connection_and_limit_enforcement,PASSED,2026-11-13
