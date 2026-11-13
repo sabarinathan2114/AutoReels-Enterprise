@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
 
-from fastapi import FastAPI, HTTPException, Depends, Request, Response
+from fastapi import FastAPI, HTTPException, Depends, Request, Response, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
@@ -21,6 +21,9 @@ from app.api.entitlements import router as entitlements_router
 from app.api.admin import router as admin_router
 from app.api.pipeline import router as pipeline_router
 from app.api.social import router as social_router
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.services.upload_security_service import UploadSecurityService
 from app.services.voice_service import VoiceService
 from app.services.media_service import MediaService
 from app.services.script_service import ScriptService
@@ -64,6 +67,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Security Headers & Rate Limiting Middleware (SEC-11, SEC-12, SEC-19)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -103,11 +110,43 @@ async def observability_middleware(request: Request, call_next):
 app.mount("/storage", StaticFiles(directory=STORAGE_DIR), name="storage")
 
 # Register Auth, Entitlements, Admin, and Pipeline routers
-app.include_router(auth_router)
+app.include_router(auth_router, prefix="/api/auth")
+app.include_router(auth_router, prefix="/api/v1/auth")
 app.include_router(entitlements_router)
 app.include_router(admin_router)
 app.include_router(pipeline_router)
 app.include_router(social_router)
+
+@app.post("/api/v1/assets/upload")
+async def upload_asset(
+    file: UploadFile = File(...),
+    category: str = Form("image"),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Secure File Upload Gate with Magic Bytes & Filename Sanitization (SEC-14).
+    """
+    file_bytes = await file.read()
+    validation = UploadSecurityService.validate_upload(
+        file_bytes=file_bytes,
+        filename=file.filename or "upload.bin",
+        category=category
+    )
+    
+    sub_dir = "images" if category == "image" else ("audio" if category == "audio" else "video")
+    dest_dir = os.path.join(STORAGE_DIR, sub_dir)
+    os.makedirs(dest_dir, exist_ok=True)
+    target_path = os.path.join(dest_dir, f"{uuid.uuid4().hex[:8]}_{validation['sanitized_filename']}")
+    
+    with open(target_path, "wb") as f:
+        f.write(file_bytes)
+        
+    rel_url = f"/storage/{sub_dir}/{os.path.basename(target_path)}"
+    return {
+        "status": "success",
+        "url": rel_url,
+        "metadata": validation
+    }
 
 dispatcher = SocialDispatcher()
 

@@ -1,9 +1,11 @@
 import uuid
 import time
+import random
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from fastapi import HTTPException, status, Depends
 
 from app.database import get_db
@@ -113,72 +115,82 @@ class EntitlementService:
         """
         ATOMIC QUOTA CONSUMPTION (Spec Section 4 & 15.4)
         Uses single conditional UPDATE ... WHERE count < limit to guarantee
-        zero race conditions under parallel requests.
+        zero race conditions under parallel requests, with automatic deadlock retry.
         """
         # Fetch uncached entitlements for strict limit
         entitlements = EntitlementService.get_effective_entitlements(db, workspace_id, use_cache=False)
         limit = entitlements["monthly_quota"]
         period = datetime.now(timezone.utc).strftime("%Y-%m")
 
-        # 1. Ensure counter row exists via atomic MySQL upsert
-        counter_id = str(uuid.uuid4())
-        try:
-            db.execute(
-                text("""
-                    INSERT INTO usage_counters (id, workspace_id, period, metric, count, updated_at)
-                    VALUES (:id, :workspace_id, :period, 'videos_rendered', 0, NOW())
-                    ON DUPLICATE KEY UPDATE updated_at = NOW()
-                """),
-                {"id": counter_id, "workspace_id": workspace_id, "period": period}
-            )
-            db.commit()
-        except Exception:
-            db.rollback()
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                # 1. Ensure counter row exists via atomic MySQL upsert
+                counter_id = str(uuid.uuid4())
+                try:
+                    db.execute(
+                        text("""
+                            INSERT INTO usage_counters (id, workspace_id, period, metric, count, updated_at)
+                            VALUES (:id, :workspace_id, :period, 'videos_rendered', 0, NOW())
+                            ON DUPLICATE KEY UPDATE updated_at = NOW()
+                        """),
+                        {"id": counter_id, "workspace_id": workspace_id, "period": period}
+                    )
+                    db.commit()
+                except Exception:
+                    db.rollback()
 
-        # 2. Atomic increment with WHERE count < limit
-        result = db.execute(
-            text("""
-                UPDATE usage_counters
-                SET count = count + 1, updated_at = NOW()
-                WHERE workspace_id = :workspace_id
-                  AND period = :period
-                  AND metric = 'videos_rendered'
-                  AND count < :limit
-            """),
-            {"workspace_id": workspace_id, "period": period, "limit": limit}
-        )
-        db.commit()
+                # 2. Atomic increment with WHERE count < limit
+                result = db.execute(
+                    text("""
+                        UPDATE usage_counters
+                        SET count = count + 1, updated_at = NOW()
+                        WHERE workspace_id = :workspace_id
+                          AND period = :period
+                          AND metric = 'videos_rendered'
+                          AND count < :limit
+                    """),
+                    {"workspace_id": workspace_id, "period": period, "limit": limit}
+                )
+                db.commit()
 
-        # Invalidate cache
-        EntitlementService.invalidate_cache(workspace_id)
+                # Invalidate cache
+                EntitlementService.invalidate_cache(workspace_id)
 
-        if result.rowcount == 0:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail={
-                    "error": "MONTHLY_QUOTA_EXCEEDED",
-                    "message": f"You have reached your monthly limit of {limit} videos for this period.",
-                    "used": limit,
+                if result.rowcount == 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                        detail={
+                            "error": "MONTHLY_QUOTA_EXCEEDED",
+                            "message": f"You have reached your monthly limit of {limit} videos for this period.",
+                            "used": limit,
+                            "limit": limit,
+                            "resets_at": entitlements["resets_at"]
+                        }
+                    )
+
+                # Return updated usage
+                counter = db.query(UsageCounter).filter(
+                    UsageCounter.workspace_id == workspace_id,
+                    UsageCounter.period == period,
+                    UsageCounter.metric == "videos_rendered"
+                ).first()
+
+                return {
+                    "status": "quota_consumed",
+                    "metric": "videos_rendered",
+                    "period": period,
+                    "used": counter.count if counter else 1,
                     "limit": limit,
-                    "resets_at": entitlements["resets_at"]
+                    "remaining": max(0, limit - (counter.count if counter else 1))
                 }
-            )
-
-        # Return updated usage
-        counter = db.query(UsageCounter).filter(
-            UsageCounter.workspace_id == workspace_id,
-            UsageCounter.period == period,
-            UsageCounter.metric == "videos_rendered"
-        ).first()
-        new_count = counter.count if counter else limit
-
-        return {
-            "status": "quota_consumed",
-            "workspace_id": workspace_id,
-            "used": new_count,
-            "remaining": max(0, limit - new_count),
-            "limit": limit
-        }
+            except OperationalError as oe:
+                db.rollback()
+                err_str = str(oe).lower()
+                if ("1213" in err_str or "1205" in err_str or "deadlock" in err_str or "lock wait" in err_str) and attempt < max_retries - 1:
+                    time.sleep(0.01 * (2 ** attempt) + random.uniform(0.005, 0.02))
+                    continue
+                raise
 
     @staticmethod
     def refund_video_quota(db: Session, workspace_id: str) -> None:

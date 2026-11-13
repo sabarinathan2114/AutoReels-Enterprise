@@ -75,3 +75,10 @@ SOC-004,Plan A / B / C Channel Limit Enforcement,Phase 9,backend/tests/test_soci
 SOC-005,YouTube Resumable Upload Session URI & Byte Resumption Protocol,Phase 9,backend/tests/test_social_channels.py::test_youtube_resumable_upload_session_and_resume,PASSED,2026-11-13
 SOC-006,Daily Channel Cap Enforcement (Max 6 Shorts Per Day),Phase 9,backend/tests/test_social_channels.py::test_daily_channel_cap_enforcement,PASSED,2026-11-13
 SOC-007,Channel Health Lifecycle & Unaudited Private-vs-Public Detection,Phase 9,backend/tests/test_social_channels.py::test_plan_a_channel_connection_and_limit_enforcement,PASSED,2026-11-13
+SEC-011,Auth Endpoint Rate Limiting (5 req/min with Retry-After),Phase 10,backend/tests/test_hardening_and_evidence.py::test_auth_rate_limiting_sensitive_endpoints,PASSED,2026-11-13
+SEC-012,General API Rate Limiting (60 req/min per client),Phase 10,backend/tests/test_hardening_and_evidence.py::test_api_rate_limiting_general_endpoints,PASSED,2026-11-13
+SEC-014,Upload Security & Binary Magic Bytes Hardening,Phase 10,backend/tests/test_hardening_and_evidence.py::test_upload_security_magic_bytes_validation,PASSED,2026-11-13
+SEC-019,Enterprise HTTP Security Headers (CSP HSTS Frame-Options),Phase 10,backend/tests/test_hardening_and_evidence.py::test_security_headers_middleware,PASSED,2026-11-13
+SEC-022,Emergency Token Revocation Lifecycle & Blacklist Audit,Phase 10,backend/tests/test_hardening_and_evidence.py::test_emergency_token_revocation_lifecycle,PASSED,2026-11-13
+HARDEN-001,Burst Concurrency Stress Load (50 parallel requests),Phase 10,backend/tests/test_hardening_and_evidence.py::test_burst_concurrency_stress_load,PASSED,2026-11-13
+HARDEN-002,Open Source Licensing & Provider Facts Evidence Manifests,Phase 10,docs/licences.md and docs/provider-facts.md,PASSED,2026-11-13

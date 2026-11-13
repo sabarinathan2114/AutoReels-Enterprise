@@ -314,3 +314,14 @@ class VideoProject(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     owner = relationship("User", back_populates="video_projects")
+
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    token_hash = Column(String(64), unique=True, index=True, nullable=False)
+    user_id = Column(Integer, nullable=True, index=True)
+    revoked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, nullable=True)
+    reason = Column(String(255), default="user_logout")

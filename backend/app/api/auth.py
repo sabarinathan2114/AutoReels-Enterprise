@@ -14,8 +14,9 @@ from app.database import get_db
 from app.models.entities import User, Channel, SocialAccount, Membership, Workspace, Subscription
 from app.services.auth_service import AuthService
 from app.services.tenant_service import TenantService
+from app.services.token_revocation_service import TokenRevocationService
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -45,7 +46,19 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+class RevokeRequest(BaseModel):
+    token: Optional[str] = None
+    reason: Optional[str] = "user_logout"
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    # 1. Check if token has been revoked (SEC-22)
+    if TokenRevocationService.is_token_revoked(db, token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"error": "TOKEN_REVOKED", "message": "This token has been revoked. Please sign in again."},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials or token expired",
@@ -153,3 +166,19 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.post("/revoke")
+def revoke_token_endpoint(
+    req: Optional[RevokeRequest] = None,
+    current_token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    """
+    Emergency Token Revocation Endpoint (SEC-22).
+    Invalidates current session token or target compromised token.
+    """
+    target_token = req.token if (req and req.token) else current_token
+    reason = req.reason if (req and req.reason) else "user_logout"
+    TokenRevocationService.revoke_token(db, target_token, reason=reason)
+    return {"status": "success", "message": "Token revoked successfully"}
+

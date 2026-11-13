@@ -74,4 +74,10 @@ class Settings(BaseSettings):
     WATERMARK_ENABLED_DEFAULT: bool = True
     DEFAULT_RESOLUTION: str = "720x1280"
 
+    # Security & Rate Limiting (Spec Section 10 & 14)
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_AUTH_PER_MIN: int = 5
+    RATE_LIMIT_DEFAULT_PER_MIN: int = 60
+    SECURITY_HEADERS_ENABLED: bool = True
+
 settings = Settings()
